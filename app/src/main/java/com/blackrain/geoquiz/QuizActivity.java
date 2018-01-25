@@ -107,6 +107,7 @@ public class QuizActivity extends AppCompatActivity
 
     private void updateQuestion()
     {
+        //Log.d(TAG, "Updateing question text ", new Exception());
         Log.d(TAG, "Current question index: " + mCurrentIndex);
         Question question = null;
         try
