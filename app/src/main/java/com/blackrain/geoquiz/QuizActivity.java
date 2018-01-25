@@ -13,6 +13,7 @@ public class QuizActivity extends AppCompatActivity
 {
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final String QUESTION_LIST = "question_list";
 
     private Button mTrueButton;
     private Button mFalseButton;
@@ -39,7 +40,14 @@ public class QuizActivity extends AppCompatActivity
         Log.d(TAG, "onCreate(Bundle) called");
         setContentView(R.layout.activity_quiz);
         if (savedInstanceState != null)
+        {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+            int[] mQuestionAnswerArray = savedInstanceState.getIntArray(QUESTION_LIST);
+            for (int i = 0; i < mQuestionBank.length; ++i)
+            {
+                mQuestionBank[i].setAnswered(mQuestionAnswerArray[i]);
+            }
+        }
 
         mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
 
@@ -99,8 +107,37 @@ public class QuizActivity extends AppCompatActivity
 
     private void updateQuestion()
     {
-        int question = mQuestionBank[mCurrentIndex].getTextResId();
-        mQuestionTextView.setText(question);
+        Log.d(TAG, "Current question index: " + mCurrentIndex);
+        Question question = null;
+        try
+        {
+            question = mQuestionBank[mCurrentIndex];
+        }
+        catch (ArrayIndexOutOfBoundsException ex)
+        {
+            Log.e(TAG, "Index was out of bounds", ex);
+        }
+        if (question == null)
+            return;
+
+        int questionId = question.getTextResId();
+        mQuestionTextView.setText(questionId);
+        updateButtons();
+    }
+
+    void updateButtons()
+    {
+        if (mQuestionBank[mCurrentIndex].getAnswered() > 0)
+        {
+            mTrueButton.setEnabled(false);
+            mFalseButton.setEnabled(false);
+        }
+        else
+        {
+            mTrueButton.setEnabled(true);
+            mFalseButton.setEnabled(true);
+        }
+
     }
 
     private void checkAnswer(boolean userPressedTrue)
@@ -108,10 +145,36 @@ public class QuizActivity extends AppCompatActivity
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
         if (userPressedTrue == answerIsTrue)
+        {
+            mQuestionBank[mCurrentIndex].setAnswered(1);
             messageResId = R.string.correct_toast;
+        }
         else
+        {
+            mQuestionBank[mCurrentIndex].setAnswered(2);
             messageResId = R.string.incorrect_toast;
+        }
+        updateButtons();
+        boolean isFinished = true;
+        float correct = 0f;
+        for (int i = 0; i < mQuestionBank.length; ++i)
+        {
+            int answeredRes = mQuestionBank[i].getAnswered();
+            if (answeredRes == 0)
+            {
+                isFinished = false;
+                break;
+            }
+            else if (answeredRes == 1)
+                correct += 1f;
+        }
+
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
+        if (isFinished)
+        {
+            float all = mQuestionBank.length;
+            Toast.makeText(this, String.format("correct result: %.2f %%",  (correct / all ) * 100f), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -149,5 +212,12 @@ public class QuizActivity extends AppCompatActivity
         super.onSaveInstanceState(outState);
         Log.i(TAG, "onSaveInstanceState");
         outState.putInt(KEY_INDEX, mCurrentIndex);
+
+        int[] mQuestionAnswerArray = new int[mQuestionBank.length];
+        for (int i = 0; i < mQuestionBank.length; ++i)
+        {
+            mQuestionAnswerArray[i] = mQuestionBank[i].getAnswered();
+        }
+        outState.putIntArray(QUESTION_LIST, mQuestionAnswerArray);
     }
 }

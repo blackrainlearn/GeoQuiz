@@ -27,8 +27,19 @@ public class Question
         mAnswerTrue = answerTrue;
     }
 
+    public int getAnswered()
+    {
+        return mAnswered;
+    }
+
+    public void setAnswered(int answered)
+    {
+        mAnswered = answered;
+    }
+
     private int mTextResId;
     private boolean mAnswerTrue;
+    private int mAnswered;
 
     public Question(int textResId, boolean answerTrue)
     {
