@@ -1,5 +1,6 @@
 package com.blackrain.geoquiz;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -37,6 +38,8 @@ public class QuizActivity extends AppCompatActivity
                     new Question(R.string.question_asia, true),
             };
     private int mCurrentIndex = 0;
+    private boolean mIsCheater;
+    private int mMessageResId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -93,6 +96,7 @@ public class QuizActivity extends AppCompatActivity
             public void onClick(View view)
             {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                mIsCheater = false;
                 updateQuestion();
             }
         });
@@ -104,6 +108,7 @@ public class QuizActivity extends AppCompatActivity
             public void onClick(View view)
             {
                 mCurrentIndex = Math.max(0, mCurrentIndex - 1);
+                mIsCheater = false;
                 updateQuestion();
             }
         });
@@ -162,16 +167,20 @@ public class QuizActivity extends AppCompatActivity
     private void checkAnswer(boolean userPressedTrue)
     {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
-        int messageResId = 0;
-        if (userPressedTrue == answerIsTrue)
+        int mMessageResId = 0;
+        if (mIsCheater)
         {
-            mQuestionBank[mCurrentIndex].setAnswered(1);
-            messageResId = R.string.correct_toast;
+            mMessageResId = R.string.judgment_toast;
         }
-        else
-        {
-            mQuestionBank[mCurrentIndex].setAnswered(2);
-            messageResId = R.string.incorrect_toast;
+        else {
+
+            if (userPressedTrue == answerIsTrue) {
+                mQuestionBank[mCurrentIndex].setAnswered(1);
+                mMessageResId = R.string.correct_toast;
+            } else {
+                mQuestionBank[mCurrentIndex].setAnswered(2);
+                mMessageResId = R.string.incorrect_toast;
+            }
         }
         updateButtons();
         boolean isFinished = true;
@@ -188,7 +197,7 @@ public class QuizActivity extends AppCompatActivity
                 correct += 1f;
         }
 
-        Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, mMessageResId, Toast.LENGTH_SHORT).show();
         if (isFinished)
         {
             float all = mQuestionBank.length;
@@ -196,7 +205,20 @@ public class QuizActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (resultCode != Activity.RESULT_OK)
+            return;
 
+        if (requestCode == REQUEST_CODE_CHEAT)
+        {
+            if (data == null)
+                return;
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
+
+    }
 
     @Override
     protected void onStart() {
